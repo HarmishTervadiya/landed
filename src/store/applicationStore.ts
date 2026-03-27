@@ -8,6 +8,7 @@ import {
   updateApplication,
   softDeleteApplication,
 } from '@/lib/applications';
+import { supabase } from '@/lib/supabase';
 
 export interface ApplicationState extends BaseState {
   applications: Application[];
@@ -43,7 +44,12 @@ export const useApplicationStore = create<ApplicationState>((set, get) => {
 
     create: (data: ApplicationInsert) =>
       safeAction(async () => {
-        const newApp = await insertApplication(data);
+        // Inject the authenticated user's ID so RLS policies are satisfied
+        const {
+          data: { user },
+        } = await supabase.auth.getUser();
+        if (!user) throw new Error('Not authenticated');
+        const newApp = await insertApplication({ ...data, user_id: user.id });
         const { applications } = get();
         set({ applications: [newApp, ...applications] });
       }),

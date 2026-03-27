@@ -13,6 +13,19 @@ export const fetchEventsByApplication = async (applicationId: string): Promise<E
   return data;
 };
 
+export const fetchUpcomingEvents = async (): Promise<Event[]> => {
+  const { data, error } = await supabase
+    .from('events')
+    .select('*')
+    .eq('status', 'Upcoming')
+    .is('deleted_at', null)
+    .order('event_time', { ascending: true })
+    .limit(10);
+
+  if (error) throw error;
+  return data;
+};
+
 export const fetchEventById = async (id: string): Promise<Event | null> => {
   const { data, error } = await supabase
     .from('events')
@@ -33,6 +46,9 @@ export const insertEvent = async (payload: EventInsert): Promise<Event> => {
 };
 
 export const updateEvent = async (id: string, payload: EventUpdate): Promise<Event> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
   const { data, error } = await supabase
     .from('events')
     .update(payload)
@@ -45,6 +61,9 @@ export const updateEvent = async (id: string, payload: EventUpdate): Promise<Eve
 };
 
 export const softDeleteEvent = async (id: string): Promise<void> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
   const { error } = await supabase
     .from('events')
     .update({ deleted_at: new Date().toISOString() })

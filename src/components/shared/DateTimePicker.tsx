@@ -1,143 +1,140 @@
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, Platform, Modal } from 'react-native';
 import RNDateTimePicker, { DateTimePickerEvent } from '@react-native-community/datetimepicker';
+import { Calendar, Clock, X } from 'lucide-react-native';
 
 interface DateTimePickerProps {
-  label: string;
-  value: Date | null;
+  value: Date;
   onChange: (date: Date) => void;
-  /** Shown below the label, e.g. the user's timezone string */
-  hint?: string;
 }
 
-export const DateTimePicker = ({ label, value, onChange, hint }: DateTimePickerProps) => {
+export const DateTimePicker = ({ value, onChange }: DateTimePickerProps) => {
   const [showDate, setShowDate] = useState(false);
   const [showTime, setShowTime] = useState(false);
+  const [tempDate, setTempDate] = useState<Date>(value);
 
-  // Temp date held while Android modal is open
-  const [tempDate, setTempDate] = useState<Date>(value ?? new Date());
+  const displayDate = value
+    .toLocaleDateString('en-GB', {
+      day: '2-digit',
+      month: '2-digit',
+      year: 'numeric',
+    })
+    .replace(/\//g, '.'); // Format to dd.mm.yyyy
 
-  const current = value ?? new Date();
-
-  const displayDate = current.toLocaleDateString('en-US', {
-    weekday: 'short',
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
-
-  const displayTime = current.toLocaleTimeString('en-US', {
+  const displayTime = value.toLocaleTimeString('en-US', {
     hour: 'numeric',
     minute: '2-digit',
     hour12: true,
   });
 
-  // ─── iOS: inline pickers shown directly ───────────────────────────────────
-  if (Platform.OS === 'ios') {
-    return (
-      <View>
-        <Text className="text-text-muted mb-1 text-xs font-medium uppercase tracking-wide">
-          {label}
-        </Text>
-        {hint ? <Text className="text-text-muted mb-2 text-xs">{hint}</Text> : null}
-
-        <View className="border-primary/10 mb-2 rounded-xl border bg-panel">
-          <RNDateTimePicker
-            value={current}
-            mode="date"
-            display="spinner"
-            onChange={(_: DateTimePickerEvent, date?: Date) => {
-              if (!date) return;
-              // Preserve existing time when only date changes
-              const merged = new Date(date);
-              merged.setHours(current.getHours(), current.getMinutes(), 0, 0);
-              onChange(merged);
-            }}
-            textColor="#3a312b"
-            style={{ height: 120 }}
-          />
-        </View>
-
-        <View className="border-primary/10 rounded-xl border bg-panel">
-          <RNDateTimePicker
-            value={current}
-            mode="time"
-            display="spinner"
-            onChange={(_: DateTimePickerEvent, date?: Date) => {
-              if (!date) return;
-              // Preserve existing date when only time changes
-              const merged = new Date(current);
-              merged.setHours(date.getHours(), date.getMinutes(), 0, 0);
-              onChange(merged);
-            }}
-            textColor="#3a312b"
-            style={{ height: 120 }}
-          />
-        </View>
-      </View>
-    );
-  }
-
-  // ─── Android: modal pickers triggered by tapping the display row ──────────
   const handleDateChange = (_: DateTimePickerEvent, date?: Date) => {
-    if (!date) {
-      setShowDate(false);
-      return;
-    }
-    // Merge new date with existing time
+    if (Platform.OS === 'android') setShowDate(false);
+    if (!date) return;
+
     const merged = new Date(date);
-    merged.setHours(current.getHours(), current.getMinutes(), 0, 0);
+    merged.setHours(value.getHours(), value.getMinutes(), 0, 0);
     setTempDate(merged);
-    setShowDate(false);
-    // Chain into time picker
-    setShowTime(true);
+
+    if (Platform.OS === 'android') {
+      onChange(merged);
+    }
   };
 
   const handleTimeChange = (_: DateTimePickerEvent, date?: Date) => {
-    setShowTime(false);
+    if (Platform.OS === 'android') setShowTime(false);
     if (!date) return;
-    const merged = new Date(tempDate);
+
+    const merged = new Date(value);
     merged.setHours(date.getHours(), date.getMinutes(), 0, 0);
-    onChange(merged);
+    setTempDate(merged);
+
+    if (Platform.OS === 'android') {
+      onChange(merged);
+    }
+  };
+
+  const renderPickerModal = (
+    mode: 'date' | 'time',
+    visible: boolean,
+    setVisible: (v: boolean) => void,
+    handleChange: any
+  ) => {
+    if (!visible) return null;
+
+    if (Platform.OS === 'android') {
+      return (
+        <RNDateTimePicker value={tempDate} mode={mode} display="default" onChange={handleChange} />
+      );
+    }
+
+    // iOS Modal Wrapper for Spinners
+    return (
+      <Modal transparent visible={visible} animationType="slide">
+        <View className="flex-1 justify-end bg-black/40">
+          <View className="rounded-t-[2.5rem] bg-white p-6 pb-12 shadow-2xl">
+            <View className="mb-6 flex-row items-center justify-between">
+              <Text className="font-serif text-xl text-[#3A312B]">
+                {mode === 'date' ? 'Select Date' : 'Select Time'}
+              </Text>
+              <TouchableOpacity
+                onPress={() => {
+                  onChange(tempDate);
+                  setVisible(false);
+                }}
+                className="h-8 w-8 items-center justify-center rounded-full bg-stone-100">
+                <Text className="w-full text-center text-xs font-medium text-[#3A312B]">OK</Text>
+              </TouchableOpacity>
+            </View>
+            <RNDateTimePicker
+              value={tempDate}
+              mode={mode}
+              display="spinner"
+              onChange={handleChange}
+              textColor="#3A312B"
+              style={{ height: 200 }}
+            />
+          </View>
+        </View>
+      </Modal>
+    );
   };
 
   return (
-    <View>
-      <Text className="text-text-muted mb-1 text-xs font-medium uppercase tracking-wide">
-        {label}
-      </Text>
-      {hint ? <Text className="text-text-muted mb-2 text-xs">{hint}</Text> : null}
+    <View className="flex-row gap-4">
+      <View className="flex-1">
+        <Text className="mb-2 text-[10px] font-medium uppercase tracking-wider text-stone-500">
+          Date
+        </Text>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => {
+            setTempDate(value);
+            setShowDate(true);
+          }}
+          className="flex-row items-center justify-between rounded-[1rem] border border-stone-200 bg-white px-4 py-3.5">
+          <Text className="text-sm font-medium text-[#3A312B]">{displayDate}</Text>
+          <Calendar size={16} color="#A8A29E" />
+        </TouchableOpacity>
+      </View>
 
-      <TouchableOpacity
-        onPress={() => {
-          setTempDate(current);
-          setShowDate(true);
-        }}
-        className="border-primary/10 flex-row items-center justify-between rounded-xl border bg-panel px-4 py-3">
-        <View>
-          <Text className="text-text text-sm font-medium">{displayDate}</Text>
-          <Text className="text-text-muted mt-0.5 text-xs">{displayTime}</Text>
-        </View>
-        <Text className="text-sm font-medium text-primary">Change</Text>
-      </TouchableOpacity>
+      <View className="flex-1">
+        <Text className="mb-2 text-[10px] font-medium uppercase tracking-wider text-stone-500">
+          Time
+        </Text>
+        <TouchableOpacity
+          activeOpacity={0.7}
+          onPress={() => {
+            setTempDate(value);
+            setShowTime(true);
+          }}
+          className="flex-row items-center justify-between rounded-[1rem] border border-stone-200 bg-white px-4 py-3.5">
+          <Text className="text-sm font-medium text-[#3A312B]">{displayTime}</Text>
+          <Clock size={16} color="#A8A29E" />
+        </TouchableOpacity>
+      </View>
 
-      {showDate && (
-        <RNDateTimePicker
-          value={tempDate}
-          mode="date"
-          display="default"
-          onChange={handleDateChange}
-        />
-      )}
-
-      {showTime && (
-        <RNDateTimePicker
-          value={tempDate}
-          mode="time"
-          display="default"
-          onChange={handleTimeChange}
-        />
-      )}
+      {renderPickerModal('date', showDate, setShowDate, handleDateChange)}
+      {renderPickerModal('time', showTime, setShowTime, handleTimeChange)}
     </View>
   );
 };

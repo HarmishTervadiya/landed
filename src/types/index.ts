@@ -1,4 +1,6 @@
-import { Tables, TablesInsert, TablesUpdate, Enums } from './supabase.types';
+import { Tables, TablesInsert, TablesUpdate, Enums, Constants } from './supabase.types';
+
+export { Constants };
 
 // ─── Row types ───────────────────────────────────────────────────────────────
 export type Application = Tables<'applications'>;

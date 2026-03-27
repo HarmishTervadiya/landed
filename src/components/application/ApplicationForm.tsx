@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { View, Text, TextInput, TouchableOpacity, ActivityIndicator } from 'react-native';
-import { Constants } from '@/types/supabase.types';
-import { AppStatus, ApplicationFormProps } from '@/types';
+import { AppStatus, ApplicationFormProps, Constants } from '@/types';
 
 export const ApplicationForm = ({ initialValues, onSubmit, loading }: ApplicationFormProps) => {
   const [companyName, setCompanyName] = useState(initialValues?.company_name || '');

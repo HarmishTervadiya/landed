@@ -1,45 +1,49 @@
-import React from 'react';
-import { View, Text, Pressable, Alert } from 'react-native';
+import React, { useCallback } from 'react';
+import { Pressable, Text, View } from 'react-native';
 import { Application } from '@/types';
-import { StatusBadge } from './StatusBadge';
+import { StatusBadge } from '@/components/application/StatusBadge';
 
 interface ApplicationCardProps {
   application: Application;
   onPress: () => void;
-  onDelete: () => void;
 }
 
-export const ApplicationCard = ({ application, onPress, onDelete }: ApplicationCardProps) => {
-  const handleDelete = () => {
-    Alert.alert(
-      'Delete Application',
-      `Are you sure you want to delete your application to ${application.company_name}?`,
-      [
-        { text: 'Cancel', style: 'cancel' },
-        { text: 'Delete', style: 'destructive', onPress: onDelete },
-      ]
-    );
-  };
+export const ApplicationCard = ({ application, onPress }: ApplicationCardProps) => {
+  const handlePress = useCallback(() => {
+    onPress();
+  }, [onPress]);
+
+  const initial = application.company_name?.charAt(0).toUpperCase() ?? '?';
 
   return (
     <Pressable
-      onPress={onPress}
-      onLongPress={handleDelete}
-      className="border-primary/10 mb-3 rounded-xl border bg-panel p-4 shadow-sm">
-      <View className="mb-2 flex-row items-start justify-between">
-        <View className="flex-1 pr-4">
-          <Text className="text-text text-lg font-bold">{application.company_name}</Text>
-          {application.role_title && (
-            <Text className="text-text-muted mt-1">{application.role_title}</Text>
-          )}
+      onPress={handlePress}
+      className="mb-3 rounded-3xl bg-panel p-4 shadow-sm"
+      style={({ pressed }) => ({ opacity: pressed ? 0.85 : 1 })}>
+      <View className="flex-row items-center gap-3">
+        {/* Avatar */}
+        <View className="h-12 w-12 items-center justify-center rounded-2xl bg-background">
+          <Text
+            className="text-lg text-primary"
+            style={{ fontFamily: 'serif', textAlignVertical: 'center', lineHeight: 24 }}>
+            {initial}
+          </Text>
         </View>
-        {application.status && <StatusBadge status={application.status} />}
-      </View>
 
-      <View className="border-primary/5 mt-2 flex-row items-center justify-between border-t pt-2">
-        <Text className="text-text-muted text-xs">
-          {new Date(application.created_at || '').toLocaleDateString()}
-        </Text>
+        {/* Info */}
+        <View className="flex-1">
+          <Text className="text-base text-primary" style={{ fontFamily: 'serif' }}>
+            {application.company_name}
+          </Text>
+          {application.role_title ? (
+            <Text className="mt-0.5 text-sm text-stone-500" numberOfLines={1}>
+              {application.role_title}
+            </Text>
+          ) : null}
+        </View>
+
+        {/* Status badge */}
+        {application.status ? <StatusBadge status={application.status} /> : null}
       </View>
     </Pressable>
   );

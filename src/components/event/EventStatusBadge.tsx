@@ -11,8 +11,8 @@ const styles: Record<EventStatus, { bg: string; text: string }> = {
 export const EventStatusBadge = ({ status }: { status: EventStatus }) => {
   const s = styles[status] ?? styles.Upcoming;
   return (
-    <View className={`self-start rounded px-2 py-1 ${s.bg}`}>
-      <Text className={`text-xs font-medium ${s.text}`}>{status}</Text>
+    <View className={`self-start justify-center items-center rounded px-2 py-1 ${s.bg}`}>
+      <Text className={`text-xs font-medium text-center ${s.text}`}>{status}</Text>
     </View>
   );
 };

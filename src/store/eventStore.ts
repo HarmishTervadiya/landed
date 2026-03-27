@@ -3,6 +3,7 @@ import { BaseState, ActionResult, createSafeAction } from '@/utils/safeAction';
 import { Event, EventInsert, EventUpdate } from '@/types';
 import {
   fetchEventsByApplication,
+  fetchUpcomingEvents,
   fetchEventById,
   insertEvent,
   updateEvent,
@@ -12,14 +13,15 @@ import {
 
 export interface EventState extends BaseState {
   events: Event[];
+  upcomingEvents: Event[];
   selectedEvent: Event | null;
 
   fetchAll: (applicationId: string) => Promise<ActionResult<void>>;
+  fetchUpcoming: () => Promise<ActionResult<void>>;
   fetchOne: (id: string) => Promise<ActionResult<void>>;
   create: (data: EventInsert) => Promise<ActionResult<void>>;
   update: (id: string, data: EventUpdate) => Promise<ActionResult<void>>;
   remove: (id: string) => Promise<ActionResult<void>>;
-  /** Syncs Upcoming → Overdue for events whose time has passed */
   syncStatuses: (applicationId: string) => Promise<ActionResult<void>>;
   clearSelected: () => void;
 }
@@ -29,6 +31,7 @@ export const useEventStore = create<EventState>((set, get) => {
 
   return {
     events: [],
+    upcomingEvents: [],
     selectedEvent: null,
     loading: false,
     error: null,
@@ -37,6 +40,12 @@ export const useEventStore = create<EventState>((set, get) => {
       safeAction(async () => {
         const data = await fetchEventsByApplication(applicationId);
         set({ events: data });
+      }),
+
+    fetchUpcoming: () =>
+      safeAction(async () => {
+        const data = await fetchUpcomingEvents();
+        set({ upcomingEvents: data });
       }),
 
     fetchOne: (id: string) =>

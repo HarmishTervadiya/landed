@@ -35,6 +35,9 @@ export const insertNote = async (payload: NoteInsert): Promise<Note> => {
 };
 
 export const updateNote = async (id: string, payload: NoteUpdate): Promise<Note> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
   const { data, error } = await supabase
     .from('notes')
     .update(payload)
@@ -47,6 +50,9 @@ export const updateNote = async (id: string, payload: NoteUpdate): Promise<Note>
 };
 
 export const softDeleteNote = async (id: string): Promise<void> => {
+  const { data: { user } } = await supabase.auth.getUser();
+  if (!user) throw new Error('Not authenticated');
+
   const { error } = await supabase
     .from('notes')
     .update({ deleted_at: new Date().toISOString() })

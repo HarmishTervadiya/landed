@@ -1,8 +1,9 @@
-import React, { useEffect } from 'react';
-import { Text, View, TouchableOpacity, ActivityIndicator } from 'react-native';
+import React, { useCallback, useEffect } from 'react';
+import { ActivityIndicator, Text, TouchableOpacity, View, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/store/authStore';
 import { useProfileStore } from '@/store/profileStore';
+import { Bell, MapPin, ChevronRight, LogOut } from 'lucide-react-native';
 
 export default function ProfileScreen() {
   const { user, signOut, loading: authLoading, error: authError } = useAuthStore();
@@ -16,58 +17,92 @@ export default function ProfileScreen() {
 
   useEffect(() => {
     load();
-  }, []);
+  }, [load]);
 
-  const error = authError ?? profileError;
   const loading = authLoading || profileLoading;
+  const error = authError ?? profileError;
+
+  const handleSyncTimezone = useCallback(() => {
+    syncTimezone();
+  }, [syncTimezone]);
+
+  const handleSignOut = useCallback(() => {
+    signOut();
+  }, [signOut]);
+
+  const avatarSeed = profile?.full_name ?? user?.email ?? 'User';
+  // Use PNG format since standard RN Image doesn't support remote SVG without SvgUri
+  const avatarUrl = `https://api.dicebear.com/7.x/notionists/png?seed=${encodeURIComponent(avatarSeed)}&backgroundColor=F6EFE8`;
 
   return (
-    <SafeAreaView edges={['top', 'left', 'right']} className="flex-1 bg-background p-4">
-      <Text className="text-text mb-6 text-3xl font-bold">Profile</Text>
+    <SafeAreaView edges={['top', 'left', 'right']} className="flex-1 bg-[#FDFBF7] px-6 pb-24 pt-12">
+      <Text className="mb-8 font-serif text-4xl tracking-tight text-[#3A312B]">profile.</Text>
 
-      <View className="border-primary/10 mb-4 rounded-xl border bg-panel p-6 shadow-sm">
-        <Text className="text-text-muted mb-1 text-sm">Email</Text>
-        <Text className="text-text mb-4 text-lg font-medium">{user?.email}</Text>
-
-        {profile?.full_name ? (
-          <>
-            <Text className="text-text-muted mb-1 text-sm">Name</Text>
-            <Text className="text-text mb-4 text-base">{profile.full_name}</Text>
-          </>
-        ) : null}
-
-        <Text className="text-text-muted mb-1 text-sm">User ID</Text>
-        <Text className="text-text font-mono text-xs">{user?.id}</Text>
+      <View className="mb-10 flex-row items-center gap-5">
+        <View className="h-20 w-20 items-center justify-center overflow-hidden rounded-full border-2 border-white bg-[#F6EFE8] shadow-md">
+          <Image source={{ uri: avatarUrl }} style={{ width: 80, height: 80 }} />
+        </View>
+        <View className="flex-1">
+          <Text className="font-serif text-2xl text-[#3A312B]">
+            {profile?.full_name || 'Landed User'}
+          </Text>
+          <Text className="text-stone-500">{user?.email}</Text>
+        </View>
       </View>
 
-      <View className="border-primary/10 mb-6 rounded-xl border bg-panel p-6 shadow-sm">
-        <Text className="text-text-muted mb-1 text-sm">Timezone</Text>
-        <Text className="text-text mb-4 text-base font-medium">
-          {profile?.timezone ?? 'Loading…'}
-        </Text>
+      <Text className="mb-4 ml-2 text-sm font-medium uppercase tracking-wider text-stone-400">
+        Preferences
+      </Text>
 
+      <View className="flex flex-col gap-3">
+        {/* Notifications */}
+        <View className="flex-row items-center gap-4 rounded-[1.5rem] border border-stone-50 bg-white p-4 shadow-sm">
+          <View className="h-10 w-10 items-center justify-center rounded-full bg-stone-100">
+            <Bell size={18} color="#78716C" />
+          </View>
+          <View className="flex-1">
+            <Text className="font-medium text-[#3A312B]">Notifications</Text>
+            <Text className="text-xs text-stone-500">Interview reminders</Text>
+          </View>
+          <View className="h-6 w-12 items-end rounded-full bg-[#E8AA42] p-1">
+            <View className="h-4 w-4 rounded-full bg-white shadow-sm" />
+          </View>
+        </View>
+
+        {/* Timezone */}
         <TouchableOpacity
-          onPress={() => syncTimezone()}
-          disabled={profileLoading}
-          className="bg-primary/10 border-primary/20 flex-row items-center justify-center rounded-lg border p-3">
+          activeOpacity={0.8}
+          onPress={handleSyncTimezone}
+          className="flex-row items-center gap-4 rounded-[1.5rem] border border-stone-50 bg-white p-4 shadow-sm">
+          <View className="h-10 w-10 items-center justify-center rounded-full bg-stone-100">
+            <MapPin size={18} color="#78716C" />
+          </View>
+          <View className="flex-1">
+            <Text className="font-medium text-[#3A312B]">Timezone</Text>
+            <Text className="text-xs text-stone-500">{profile?.timezone || 'Syncing...'}</Text>
+          </View>
           {profileLoading ? (
-            <ActivityIndicator size="small" color="#3a312b" />
+            <ActivityIndicator size="small" color="#D6D3D1" />
           ) : (
-            <Text className="text-sm font-semibold text-primary">Sync Device Timezone</Text>
+            <ChevronRight size={18} color="#D6D3D1" />
           )}
         </TouchableOpacity>
       </View>
 
-      {error ? <Text className="mb-4 text-red-500">{error}</Text> : null}
+      {error ? <Text className="mt-4 text-center text-sm text-red-500">{error}</Text> : null}
 
       <TouchableOpacity
-        onPress={() => signOut()}
+        onPress={handleSignOut}
         disabled={loading}
-        className="bg-primary/10 border-primary/20 flex-row items-center justify-center rounded-xl border p-4">
-        {loading ? (
-          <ActivityIndicator color="#3a312b" />
+        activeOpacity={0.8}
+        className="mt-12 flex-row items-center justify-center gap-3 rounded-[1.5rem] border border-rose-100 bg-white py-4 shadow-sm">
+        {authLoading ? (
+          <ActivityIndicator color="#F43F5E" />
         ) : (
-          <Text className="text-lg font-bold text-primary">Sign Out</Text>
+          <>
+            <LogOut size={18} color="#F43F5E" />
+            <Text className="font-medium text-rose-500">Log out</Text>
+          </>
         )}
       </TouchableOpacity>
     </SafeAreaView>
