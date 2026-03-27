@@ -51,7 +51,7 @@ export function ApplicationCard({
       </View>
       <View className={`rounded-full px-3 py-1.5 ${statusColorClass.split(' ')[0]}`}>
         <Text className={`text-xs font-medium ${statusColorClass.split(' ')[1]}`}>
-          {application.status?.replace('_', ' ')}
+          {application.status?.replace('_', ' ') ?? ''}
         </Text>
       </View>
     </TouchableOpacity>

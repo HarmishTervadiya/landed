@@ -151,9 +151,9 @@ export default function Dashboard() {
                 <Calendar size={20} color="#E8AA42" />
               </View>
               <View className="flex-1">
-                <Text className="font-serif text-lg font-medium text-[#3A312B]">{item.title}</Text>
+                <Text className="font-serif text-lg font-medium text-[#3A312B]">{item.title ?? ''}</Text>
                 <Text className="text-sm text-stone-500">
-                  {item.type.replace('_', ' ')} • {formatEventTime(item.event_time, timezone)}
+                  {item.type?.replace('_', ' ') ?? ''} • {formatEventTime(item.event_time, timezone)}
                 </Text>
               </View>
               <ChevronRight size={20} color="#D6D3D1" />

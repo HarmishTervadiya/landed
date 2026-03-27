@@ -7,11 +7,13 @@ import {
   ScrollView,
   ActivityIndicator,
   Alert,
+  Linking,
 } from 'react-native';
 import { BottomSheet } from '@/components/shared/BottomSheet';
 import { useApplicationStore } from '@/store/applicationStore';
 import { Constants, Application, ApplicationInsert, AppStatus } from '@/types';
-import { FileText, Trash2 } from 'lucide-react-native';
+import { FileText, Trash2, Upload, ExternalLink } from 'lucide-react-native';
+import { pickAndUploadJD, getJDSignedUrl } from '@/lib/storage';
 
 interface ApplicationSheetProps {
   isOpen: boolean;
@@ -29,6 +31,8 @@ export const ApplicationSheet = ({ isOpen, onClose, application }: ApplicationSh
   const [jdUrl, setJdUrl] = useState('');
   const [status, setStatus] = useState<AppStatus>('Wishlist');
   const [showStatusPicker, setShowStatusPicker] = useState(false);
+  const [jdStoragePath, setJdStoragePath] = useState<string | null>(null);
+  const [jdUploading, setJdUploading] = useState(false);
 
   useEffect(() => {
     if (isOpen && application) {
@@ -37,12 +41,14 @@ export const ApplicationSheet = ({ isOpen, onClose, application }: ApplicationSh
       setJdUrl(application.jd_url ?? '');
       setStatus(application.status ?? 'Wishlist');
       setShowStatusPicker(false);
+      setJdStoragePath(application.jd_storage_path ?? null);
     } else if (!isOpen) {
       setCompanyName('');
       setRoleTitle('');
       setJdUrl('');
       setStatus('Wishlist');
       setShowStatusPicker(false);
+      setJdStoragePath(null);
     }
   }, [isOpen, application]);
 
@@ -53,6 +59,7 @@ export const ApplicationSheet = ({ isOpen, onClose, application }: ApplicationSh
       company_name: companyName.trim(),
       role_title: roleTitle.trim() || null,
       jd_url: jdUrl.trim() || null,
+      jd_storage_path: jdStoragePath,
       status,
     };
 
@@ -63,7 +70,39 @@ export const ApplicationSheet = ({ isOpen, onClose, application }: ApplicationSh
       const result = await create(payload as ApplicationInsert);
       if (result.success) onClose();
     }
-  }, [companyName, roleTitle, jdUrl, status, isEditMode, application, create, update, onClose]);
+  }, [companyName, roleTitle, jdUrl, jdStoragePath, status, isEditMode, application, create, update, onClose]);
+
+  const handleJDUpload = useCallback(async () => {
+    if (!application?.id && !isEditMode) {
+      Alert.alert('Save first', 'Please save the application before uploading a JD.');
+      return;
+    }
+    const appId = application?.id ?? 'temp';
+    try {
+      setJdUploading(true);
+      const path = await pickAndUploadJD(appId);
+      if (path) {
+        setJdStoragePath(path);
+        // If in edit mode, save immediately
+        if (isEditMode && application) {
+          await update(application.id, { jd_storage_path: path });
+        }
+      }
+    } catch (e: unknown) {
+      Alert.alert('Upload failed', e instanceof Error ? e.message : 'Unknown error');
+    } finally {
+      setJdUploading(false);
+    }
+  }, [application, isEditMode, update]);
+
+  const handleViewJD = useCallback(async () => {
+    if (jdStoragePath) {
+      const url = await getJDSignedUrl(jdStoragePath);
+      if (url) Linking.openURL(url);
+    } else if (jdUrl) {
+      Linking.openURL(jdUrl);
+    }
+  }, [jdStoragePath, jdUrl]);
 
   const handleDelete = useCallback(() => {
     if (!application) return;
@@ -86,13 +125,6 @@ export const ApplicationSheet = ({ isOpen, onClose, application }: ApplicationSh
   }, [application, remove, onClose]);
 
   const isSubmitDisabled = !companyName.trim() || loading;
-
-  const cycleStatus = () => {
-    const statuses = Constants.public.Enums.app_status;
-    const currentIndex = statuses.indexOf(status);
-    const nextIndex = (currentIndex + 1) % statuses.length;
-    setStatus(statuses[nextIndex]);
-  };
 
   return (
     <BottomSheet
@@ -159,14 +191,43 @@ export const ApplicationSheet = ({ isOpen, onClose, application }: ApplicationSh
             <Text className="mb-2 text-[10px] font-medium uppercase tracking-wider text-stone-500">
               JD Document
             </Text>
-            <TouchableOpacity
-              activeOpacity={0.7}
-              className="flex-row items-center justify-center gap-2 rounded-[1rem] border border-stone-200 bg-[#FDFBF7] px-4 py-3.5">
-              <FileText size={16} color="#78716C" />
-              <Text className="text-sm font-medium text-[#57534E]">
-                {isEditMode ? 'View PDF' : 'Upload PDF'}
-              </Text>
-            </TouchableOpacity>
+            {jdStoragePath ? (
+              <View className="flex-row gap-2">
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={handleViewJD}
+                  className="flex-1 flex-row items-center justify-center gap-2 rounded-[1rem] border border-stone-200 bg-[#FDFBF7] px-3 py-3.5">
+                  <ExternalLink size={14} color="#78716C" />
+                  <Text className="text-xs font-medium text-[#57534E]">View JD</Text>
+                </TouchableOpacity>
+                <TouchableOpacity
+                  activeOpacity={0.7}
+                  onPress={handleJDUpload}
+                  disabled={jdUploading}
+                  className="flex-row items-center justify-center gap-1 rounded-[1rem] border border-stone-200 bg-[#FDFBF7] px-3 py-3.5">
+                  {jdUploading ? (
+                    <ActivityIndicator size="small" color="#78716C" />
+                  ) : (
+                    <Upload size={14} color="#78716C" />
+                  )}
+                </TouchableOpacity>
+              </View>
+            ) : (
+              <TouchableOpacity
+                activeOpacity={0.7}
+                onPress={handleJDUpload}
+                disabled={jdUploading}
+                className="flex-row items-center justify-center gap-2 rounded-[1rem] border border-stone-200 bg-[#FDFBF7] px-4 py-3.5">
+                {jdUploading ? (
+                  <ActivityIndicator size="small" color="#78716C" />
+                ) : (
+                  <FileText size={16} color="#78716C" />
+                )}
+                <Text className="text-sm font-medium text-[#57534E]">
+                  {jdUploading ? 'Uploading…' : 'Upload PDF'}
+                </Text>
+              </TouchableOpacity>
+            )}
           </View>
         </View>
 
@@ -182,8 +243,15 @@ export const ApplicationSheet = ({ isOpen, onClose, application }: ApplicationSh
                       setStatus(st);
                       setShowStatusPicker(false);
                     }}
-                    className={`rounded-full border px-4 py-2 ${status === st ? 'border-[#3A312B] bg-[#3A312B]' : 'border-stone-200 bg-white'}`}>
-                    <Text className={`text-center text-sm ${status === st ? 'text-white' : 'text-stone-600'}`}>
+                    style={{
+                      borderRadius: 999,
+                      borderWidth: 1,
+                      paddingHorizontal: 16,
+                      paddingVertical: 8,
+                      borderColor: status === st ? '#3A312B' : '#E7E5E4',
+                      backgroundColor: status === st ? '#3A312B' : '#FFFFFF',
+                    }}>
+                    <Text style={{ fontSize: 14, color: status === st ? '#FFFFFF' : '#57534E', textAlign: 'center' }}>
                       {st.replace('_', ' ')}
                     </Text>
                   </TouchableOpacity>
@@ -198,7 +266,15 @@ export const ApplicationSheet = ({ isOpen, onClose, application }: ApplicationSh
           onPress={handleSubmit}
           disabled={isSubmitDisabled}
           activeOpacity={0.8}
-          className={`mb-4 w-full items-center justify-center rounded-[1.5rem] py-4 shadow-md ${isSubmitDisabled ? 'bg-[#3A312B]/50' : 'bg-[#3A312B]'}`}>
+          style={{
+            marginBottom: 16,
+            width: '100%',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: 24,
+            paddingVertical: 16,
+            backgroundColor: isSubmitDisabled ? 'rgba(58,49,43,0.5)' : '#3A312B',
+          }}>
           {loading ? (
             <ActivityIndicator color="#FFFFFF" />
           ) : (

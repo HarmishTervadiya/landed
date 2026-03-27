@@ -25,24 +25,29 @@ function TimelineItemRowInner({
   };
 
   const getTimeString = () => {
-    if (isEvent) return formatEventTime(item.data.event_time, timezone).split(',')[1]?.trim();
-    return formatEventTime(item.data.created_at || new Date().toISOString(), timezone)
-      .split(',')[1]
-      ?.trim();
+    if (isEvent) {
+      const parts = formatEventTime(item.data.event_time, timezone).split(',');
+      return parts[1]?.trim();
+    }
+    const parts = formatEventTime(item.data.created_at || new Date().toISOString(), timezone).split(',');
+    return parts[1]?.trim();
   };
 
   const isPastEvent = isEvent && item.data.status === 'Done';
 
+  const dateStr = getDateString();
+  const timeStr = getTimeString();
+
   const innerContent = (
     <View
       className={`${isNote ? 'bg-[#F6EFE8]' : 'border border-stone-100 bg-white'} rounded-[1.5rem] p-5 shadow-sm`}>
-      {isEvent && <Text className="mb-1 font-serif text-lg text-[#3A312B]">{item.data.title}</Text>}
+      {isEvent && <Text className="mb-1 font-serif text-lg text-[#3A312B]">{item.data.title ?? ''}</Text>}
       <Text className={`text-sm leading-relaxed ${isNote ? 'text-[#4A3F35]' : 'text-[#3A312B]'}`}>
-        {isNote ? item.data.content : 'Event scheduled.'}
+        {isNote ? (item.data.content ?? '') : 'Event scheduled.'}
       </Text>
       <View className="mt-3 flex-row items-center gap-2">
         <Text className={`text-xs font-medium ${isNote ? 'text-stone-500' : 'text-stone-400'}`}>
-          {getDateString()} • {getTimeString()}
+          {dateStr ?? ''} • {timeStr ?? ''}
         </Text>
       </View>
     </View>

@@ -69,7 +69,7 @@ export const DateTimePicker = ({ value, onChange }: DateTimePickerProps) => {
 
     // iOS Modal Wrapper for Spinners
     return (
-      <Modal transparent visible={visible} animationType="slide">
+      <Modal transparent visible={visible} animationType="slide" statusBarTranslucent>
         <View className="flex-1 justify-end bg-black/40">
           <View className="rounded-t-[2.5rem] bg-white p-6 pb-12 shadow-2xl">
             <View className="mb-6 flex-row items-center justify-between">

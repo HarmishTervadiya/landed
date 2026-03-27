@@ -154,11 +154,15 @@ export default function EventDetailScreen() {
               <TouchableOpacity
                 key={t}
                 onPress={() => setType(t)}
-                className={`rounded-full px-3 py-1 ${
-                  type === t ? 'bg-primary' : 'border-primary/20 border bg-background'
-                }`}>
-                <Text
-                  className={`text-xs font-medium ${type === t ? 'text-background' : 'text-primary'}`}>
+                style={{
+                  borderRadius: 999,
+                  paddingHorizontal: 12,
+                  paddingVertical: 4,
+                  backgroundColor: type === t ? '#3A312B' : 'transparent',
+                  borderWidth: 1,
+                  borderColor: type === t ? '#3A312B' : 'rgba(58,49,43,0.2)',
+                }}>
+                <Text style={{ fontSize: 12, fontWeight: '500', color: type === t ? '#FDFBF7' : '#3A312B' }}>
                   {t.replace('_', ' ')}
                 </Text>
               </TouchableOpacity>

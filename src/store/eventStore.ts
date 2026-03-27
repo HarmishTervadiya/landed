@@ -10,6 +10,7 @@ import {
   softDeleteEvent,
   syncEventStatuses,
 } from '@/lib/events';
+import { scheduleEventReminders, cancelEventReminders } from '@/utils/notifications';
 
 export interface EventState extends BaseState {
   events: Event[];
@@ -58,11 +59,12 @@ export const useEventStore = create<EventState>((set, get) => {
       safeAction(async () => {
         const newEvent = await insertEvent(data);
         const { events } = get();
-        // Keep sorted by event_time ascending
         const updated = [...events, newEvent].sort(
           (a, b) => new Date(a.event_time).getTime() - new Date(b.event_time).getTime()
         );
         set({ events: updated });
+        // Schedule reminders (fire-and-forget, don't block the action)
+        scheduleEventReminders(newEvent.id, newEvent.title, newEvent.event_time);
       }),
 
     update: (id: string, data: EventUpdate) =>
@@ -76,6 +78,8 @@ export const useEventStore = create<EventState>((set, get) => {
           events: updated,
           selectedEvent: selectedEvent?.id === id ? updatedEvent : selectedEvent,
         });
+        // Reschedule reminders with updated time
+        scheduleEventReminders(updatedEvent.id, updatedEvent.title, updatedEvent.event_time);
       }),
 
     remove: (id: string) =>
@@ -86,6 +90,8 @@ export const useEventStore = create<EventState>((set, get) => {
           events: events.filter((e) => e.id !== id),
           selectedEvent: selectedEvent?.id === id ? null : selectedEvent,
         });
+        // Cancel any pending reminders
+        cancelEventReminders(id);
       }),
 
     syncStatuses: (applicationId: string) =>

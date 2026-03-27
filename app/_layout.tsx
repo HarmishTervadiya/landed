@@ -6,6 +6,7 @@ import * as WebBrowser from 'expo-web-browser';
 import { useAuthStore } from '@/store/authStore';
 import { useOnboarding } from '@/hooks/useOnboarding';
 import { useEffect } from 'react';
+import { requestNotificationPermissions } from '@/utils/notifications';
 
 WebBrowser.maybeCompleteAuthSession();
 
@@ -19,6 +20,7 @@ export default function RootLayout() {
 
   useEffect(() => {
     initialize();
+    requestNotificationPermissions();
   }, []);
 
   useEffect(() => {

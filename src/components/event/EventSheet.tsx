@@ -41,8 +41,10 @@ export const EventSheet = ({ isOpen, onClose, applicationId, timezone }: EventSh
   const handleSubmit = useCallback(async () => {
     if (!title.trim()) return;
 
-    // Convert picker Date to local ISO string (strip the Z), then convert to UTC
-    const localIso = eventDate.toISOString().replace('Z', '');
+    // eventDate is a local Date from the picker.
+    // Build a local ISO string from its components (not .toISOString() which converts to UTC).
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const localIso = `${eventDate.getFullYear()}-${pad(eventDate.getMonth() + 1)}-${pad(eventDate.getDate())}T${pad(eventDate.getHours())}:${pad(eventDate.getMinutes())}:00`;
     const utcIso = toUTC(localIso, timezone);
 
     const result = await create({
@@ -79,9 +81,20 @@ export const EventSheet = ({ isOpen, onClose, applicationId, timezone }: EventSh
                   key={type}
                   onPress={() => setEventType(type)}
                   activeOpacity={0.7}
-                  className={`rounded-full px-4 py-2 ${eventType === type ? 'border border-stone-100 bg-white shadow-sm' : 'bg-transparent'}`}>
+                  style={{
+                    borderRadius: 999,
+                    paddingHorizontal: 16,
+                    paddingVertical: 8,
+                    backgroundColor: eventType === type ? '#FFFFFF' : 'transparent',
+                    borderWidth: eventType === type ? 1 : 0,
+                    borderColor: '#E7E5E4',
+                  }}>
                   <Text
-                    className={`text-sm ${eventType === type ? 'font-medium text-[#3A312B]' : 'text-stone-500'}`}>
+                    style={{
+                      fontSize: 14,
+                      fontWeight: eventType === type ? '500' : '400',
+                      color: eventType === type ? '#3A312B' : '#78716C',
+                    }}>
                     {type.replace('_', ' ')}
                   </Text>
                 </TouchableOpacity>
@@ -115,7 +128,15 @@ export const EventSheet = ({ isOpen, onClose, applicationId, timezone }: EventSh
           onPress={handleSubmit}
           disabled={isSubmitDisabled}
           activeOpacity={0.8}
-          className={`mb-4 w-full items-center justify-center rounded-[1.5rem] py-4 shadow-md ${isSubmitDisabled ? 'bg-[#E8AA42]/50' : 'bg-[#E8AA42]'}`}>
+          style={{
+            marginBottom: 16,
+            width: '100%',
+            alignItems: 'center',
+            justifyContent: 'center',
+            borderRadius: 24,
+            paddingVertical: 16,
+            backgroundColor: isSubmitDisabled ? 'rgba(232,170,66,0.5)' : '#E8AA42',
+          }}>
           {loading ? (
             <ActivityIndicator color="#FFFFFF" />
           ) : (
