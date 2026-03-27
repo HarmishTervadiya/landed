@@ -29,7 +29,9 @@ function TimelineItemRowInner({
       const parts = formatEventTime(item.data.event_time, timezone).split(',');
       return parts[1]?.trim();
     }
-    const parts = formatEventTime(item.data.created_at || new Date().toISOString(), timezone).split(',');
+    const parts = formatEventTime(item.data.created_at || new Date().toISOString(), timezone).split(
+      ','
+    );
     return parts[1]?.trim();
   };
 
@@ -41,7 +43,9 @@ function TimelineItemRowInner({
   const innerContent = (
     <View
       className={`${isNote ? 'bg-[#F6EFE8]' : 'border border-stone-100 bg-white'} rounded-[1.5rem] p-5 shadow-sm`}>
-      {isEvent && <Text className="mb-1 font-serif text-lg text-[#3A312B]">{item.data.title ?? ''}</Text>}
+      {isEvent && (
+        <Text className="mb-1 font-serif text-lg text-[#3A312B]">{item.data.title ?? ''}</Text>
+      )}
       <Text className={`text-sm leading-relaxed ${isNote ? 'text-[#4A3F35]' : 'text-[#3A312B]'}`}>
         {isNote ? (item.data.content ?? '') : 'Event scheduled.'}
       </Text>

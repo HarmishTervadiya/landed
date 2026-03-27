@@ -39,7 +39,7 @@ export default function ApplicationsScreen() {
 
   const handleCardPress = useCallback(
     (application: Application) => {
-      router.push({ pathname: '/main/applicationDetail', params: { id: application.id } });
+      router.push({ pathname: '/applicationDetail', params: { id: application.id } });
     },
     [router]
   );

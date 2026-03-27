@@ -111,7 +111,9 @@ export async function scheduleEventReminders(
       });
 
       ids.push(id);
-      console.log(`[Notifications] Scheduled "${reminder.label}" at ${triggerDate.toISOString()} — id: ${id}`);
+      console.log(
+        `[Notifications] Scheduled "${reminder.label}" at ${triggerDate.toISOString()} — id: ${id}`
+      );
     }
 
     if (ids.length > 0) {

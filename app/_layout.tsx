@@ -72,8 +72,10 @@ export default function RootLayout() {
   }
 
   return (
-    <Stack screenOptions={{ contentStyle: { backgroundColor: 'transparent', }, headerShown: false }}>
+    <Stack screenOptions={{ contentStyle: { backgroundColor: 'transparent' }, headerShown: false }}>
       <Stack.Screen name="main" options={{ headerShown: false }} />
+      <Stack.Screen name="(details)/applicationDetail" options={{ headerShown: false, animation: 'slide_from_right' }} />
+      <Stack.Screen name="(details)/eventDetail" options={{ headerShown: false, animation: 'slide_from_right' }} />
       <Stack.Screen name="auth/login" options={{ headerShown: false }} />
       <Stack.Screen name="auth/callback" options={{ headerShown: false }} />
       <Stack.Screen name="onboarding" options={{ headerShown: false }} />

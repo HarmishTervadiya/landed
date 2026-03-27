@@ -60,11 +60,7 @@ export default function EventDetailScreen() {
   }, [selectedEvent, timezone]);
 
   const handleBack = useCallback(() => {
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace('/main/');
-    }
+    router.back();
   }, [router]);
 
   const handleSave = useCallback(async () => {
@@ -162,17 +158,19 @@ export default function EventDetailScreen() {
                   borderWidth: 1,
                   borderColor: type === t ? '#3A312B' : 'rgba(58,49,43,0.2)',
                 }}>
-                <Text style={{ fontSize: 12, fontWeight: '500', color: type === t ? '#FDFBF7' : '#3A312B' }}>
+                <Text
+                  style={{
+                    fontSize: 12,
+                    fontWeight: '500',
+                    color: type === t ? '#FDFBF7' : '#3A312B',
+                  }}>
                   {t.replace('_', ' ')}
                 </Text>
               </TouchableOpacity>
             ))}
           </View>
 
-          <DateTimePicker
-            value={eventDate}
-            onChange={setEventDate}
-          />
+          <DateTimePicker value={eventDate} onChange={setEventDate} />
         </View>
 
         <TouchableOpacity

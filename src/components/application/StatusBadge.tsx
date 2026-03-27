@@ -29,8 +29,9 @@ export const StatusBadge = ({ status }: { status: AppStatus }) => {
   const styles = getStatusStyles(status);
 
   return (
-    <View className={`w-auto self-start justify-center items-center rounded-full px-3 py-1 ${styles.bg}`}>
-      <Text className={`text-xs font-medium text-center ${styles.text}`}>
+    <View
+      className={`w-auto items-center justify-center self-start rounded-full px-3 py-1 ${styles.bg}`}>
+      <Text className={`text-center text-xs font-medium ${styles.text}`}>
         {status.replace('_', ' ')}
       </Text>
     </View>

@@ -18,7 +18,14 @@ import { ApplicationSheet } from '@/components/application/ApplicationSheet';
 import { EventSheet } from '@/components/event/EventSheet';
 import { TimelineItemRow } from '@/components/timeline/TimelineItemRow';
 import { useTimeline } from '@/hooks/useTimeline';
-import { ArrowLeft, Link as LinkIcon, Calendar, Send, PencilIcon, FileText } from 'lucide-react-native';
+import {
+  ArrowLeft,
+  Link as LinkIcon,
+  Calendar,
+  Send,
+  PencilIcon,
+  FileText,
+} from 'lucide-react-native';
 import { getJDSignedUrl } from '@/lib/storage';
 import { TimelineItem } from '@/types';
 
@@ -54,22 +61,13 @@ export default function ApplicationDetailScreen() {
   }, [id, fetchOne, syncStatuses, fetchEvents, fetchForApplication]);
 
   const handleBack = useCallback(() => {
-    if (router.canGoBack()) {
-      router.back();
-    } else {
-      router.replace('/main/');
-    }
+    router.back();
   }, [router]);
 
   const handleAppSheetClose = useCallback(() => {
     setAppSheetOpen(false);
-    // If the application was deleted, selectedApplication will be null — navigate away
     if (!selectedApplication) {
-      if (router.canGoBack()) {
-        router.back();
-      } else {
-        router.replace('/main/applications');
-      }
+      router.back();
     }
   }, [selectedApplication, router]);
 
@@ -97,7 +95,7 @@ export default function ApplicationDetailScreen() {
             timezone={timezone}
             onPressEvent={
               item.kind === 'event'
-                ? () => router.push({ pathname: '/main/eventDetail', params: { id: item.data.id } })
+                ? () => router.push({ pathname: '/eventDetail', params: { id: item.data.id } })
                 : undefined
             }
           />
@@ -153,7 +151,7 @@ export default function ApplicationDetailScreen() {
           ListHeaderComponent={
             <>
               {/* Top Header Card */}
-              <View className="z-20 rounded-b-[3rem] border-b border-stone-50 bg-white px-6 pb-6 pt-6 shadow-sm mb-8">
+              <View className="z-20 mb-8 rounded-b-[3rem] border-b border-stone-50 bg-white px-6 pb-6 pt-6 shadow-sm">
                 <View className="mb-6 flex-row items-center justify-between">
                   <TouchableOpacity
                     onPress={handleBack}
@@ -174,7 +172,9 @@ export default function ApplicationDetailScreen() {
                     </Text>
                   </View>
                   <View className="flex-1">
-                    <Text className="font-serif text-3xl leading-tight text-[#3A312B]" numberOfLines={2}>
+                    <Text
+                      className="font-serif text-3xl leading-tight text-[#3A312B]"
+                      numberOfLines={2}>
                       {app?.company_name || '—'}
                     </Text>
                     <Text className="mt-1 text-stone-500" numberOfLines={1}>
@@ -204,14 +204,14 @@ export default function ApplicationDetailScreen() {
                 </View>
               </View>
 
-              <Text className="mb-8 text-center text-sm font-medium uppercase tracking-wider text-stone-400 px-6">
+              <Text className="mb-8 px-6 text-center text-sm font-medium uppercase tracking-wider text-stone-400">
                 Your Journey
               </Text>
             </>
           }
           ListEmptyComponent={
             !eventLoading && !noteLoading ? (
-              <Text className="text-center text-stone-400 px-6">No events or notes yet.</Text>
+              <Text className="px-6 text-center text-stone-400">No events or notes yet.</Text>
             ) : (
               <ActivityIndicator color="#3A312B" />
             )

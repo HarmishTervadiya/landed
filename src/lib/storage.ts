@@ -24,12 +24,21 @@ export async function pickAndUploadJD(applicationId: string): Promise<string | n
   if (result.canceled || !result.assets?.[0]) return null;
 
   const asset = result.assets[0];
-  console.log('[pickAndUploadJD] asset.uri:', asset.uri, 'name:', asset.name, 'mimeType:', asset.mimeType);
+  console.log(
+    '[pickAndUploadJD] asset.uri:',
+    asset.uri,
+    'name:',
+    asset.name,
+    'mimeType:',
+    asset.mimeType
+  );
 
   const ext = asset.name.split('.').pop() ?? 'pdf';
   const storagePath = `${applicationId}/jd.${ext}`;
 
-  const { data: { session } } = await supabase.auth.getSession();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
   if (!session) throw new Error('Not authenticated');
 
   // Copy to a guaranteed file:// cache path (handles content:// URIs on Android)
@@ -38,7 +47,14 @@ export async function pickAndUploadJD(applicationId: string): Promise<string | n
   const sourceFile = new File(asset.uri);
   await sourceFile.copy(cachedFile);
 
-  console.log('[pickAndUploadJD] cachedFile.uri:', cachedFile.uri, 'exists:', cachedFile.exists, 'size:', cachedFile.size);
+  console.log(
+    '[pickAndUploadJD] cachedFile.uri:',
+    cachedFile.uri,
+    'exists:',
+    cachedFile.exists,
+    'size:',
+    cachedFile.size
+  );
 
   // Read as bytes — passing a File object to fetch body sends 0 bytes in RN
   const bytes = await cachedFile.bytes();
@@ -60,7 +76,9 @@ export async function pickAndUploadJD(applicationId: string): Promise<string | n
   console.log('[pickAndUploadJD] upload status:', response.status);
 
   // Clean up cache file
-  try { cachedFile.delete(); } catch {}
+  try {
+    cachedFile.delete();
+  } catch {}
 
   if (!response.ok) {
     const body = await response.text();

@@ -46,7 +46,9 @@ export const insertEvent = async (payload: EventInsert): Promise<Event> => {
 };
 
 export const updateEvent = async (id: string, payload: EventUpdate): Promise<Event> => {
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
   const { data, error } = await supabase
@@ -61,7 +63,9 @@ export const updateEvent = async (id: string, payload: EventUpdate): Promise<Eve
 };
 
 export const softDeleteEvent = async (id: string): Promise<void> => {
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
   const { error } = await supabase

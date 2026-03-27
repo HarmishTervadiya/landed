@@ -70,7 +70,18 @@ export const ApplicationSheet = ({ isOpen, onClose, application }: ApplicationSh
       const result = await create(payload as ApplicationInsert);
       if (result.success) onClose();
     }
-  }, [companyName, roleTitle, jdUrl, jdStoragePath, status, isEditMode, application, create, update, onClose]);
+  }, [
+    companyName,
+    roleTitle,
+    jdUrl,
+    jdStoragePath,
+    status,
+    isEditMode,
+    application,
+    create,
+    update,
+    onClose,
+  ]);
 
   const handleJDUpload = useCallback(async () => {
     if (!application?.id && !isEditMode) {
@@ -251,7 +262,12 @@ export const ApplicationSheet = ({ isOpen, onClose, application }: ApplicationSh
                       borderColor: status === st ? '#3A312B' : '#E7E5E4',
                       backgroundColor: status === st ? '#3A312B' : '#FFFFFF',
                     }}>
-                    <Text style={{ fontSize: 14, color: status === st ? '#FFFFFF' : '#57534E', textAlign: 'center' }}>
+                    <Text
+                      style={{
+                        fontSize: 14,
+                        color: status === st ? '#FFFFFF' : '#57534E',
+                        textAlign: 'center',
+                      }}>
                       {st.replace('_', ' ')}
                     </Text>
                   </TouchableOpacity>

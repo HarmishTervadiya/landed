@@ -35,7 +35,9 @@ export const updateApplication = async (
   id: string,
   payload: ApplicationUpdate
 ): Promise<Application> => {
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
   const { data, error } = await supabase
@@ -51,7 +53,9 @@ export const updateApplication = async (
 };
 
 export const softDeleteApplication = async (id: string): Promise<void> => {
-  const { data: { user } } = await supabase.auth.getUser();
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
   if (!user) throw new Error('Not authenticated');
 
   const { error } = await supabase
