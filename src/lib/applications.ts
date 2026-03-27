@@ -1,26 +1,30 @@
 import { supabase } from '@/lib/supabase';
-import { Tables, TablesInsert, TablesUpdate } from '@/types/supabase.types';
+import { Application, ApplicationInsert, ApplicationUpdate } from '@/types';
 
-export const fetchApplications = async (): Promise<Tables<'applications'>[]> => {
+export const fetchApplications = async (): Promise<Application[]> => {
   const { data, error } = await supabase
     .from('applications')
     .select('*')
+    .is('deleted_at', null)
     .order('created_at', { ascending: false });
 
   if (error) throw error;
   return data;
 };
 
-export const fetchApplicationById = async (id: string): Promise<Tables<'applications'> | null> => {
-  const { data, error } = await supabase.from('applications').select('*').eq('id', id).single();
+export const fetchApplicationById = async (id: string): Promise<Application | null> => {
+  const { data, error } = await supabase
+    .from('applications')
+    .select('*')
+    .eq('id', id)
+    .is('deleted_at', null)
+    .single();
 
   if (error) throw error;
   return data;
 };
 
-export const insertApplication = async (
-  payload: TablesInsert<'applications'>
-): Promise<Tables<'applications'>> => {
+export const insertApplication = async (payload: ApplicationInsert): Promise<Application> => {
   const { data, error } = await supabase.from('applications').insert(payload).select('*').single();
 
   if (error) throw error;
@@ -29,8 +33,8 @@ export const insertApplication = async (
 
 export const updateApplication = async (
   id: string,
-  payload: TablesUpdate<'applications'>
-): Promise<Tables<'applications'>> => {
+  payload: ApplicationUpdate
+): Promise<Application> => {
   const { data, error } = await supabase
     .from('applications')
     .update(payload)
