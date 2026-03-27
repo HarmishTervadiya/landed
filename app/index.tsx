@@ -6,7 +6,6 @@ export default function Home() {
   return (
     <SafeAreaProvider>
       <ScreenContent title="Home" path="app/index.tsx"></ScreenContent>
-      <StatusBar style="auto" />
     </SafeAreaProvider>
   );
 }

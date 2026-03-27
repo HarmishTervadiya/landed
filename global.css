@@ -1,3 +1,57 @@
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  :root {
+    /* Light Mode Colors (Calm Cream & Charcoal) */
+
+    /* Primary (Deep Charcoal/Brown) */
+    --color-primary-bg: #3a312b;
+    --color-primary-hover-bg: #4a3f35;
+    --color-primary-hover-border: #251f1c;
+    --color-primary-hex: #3a312b;
+    --color-primary-dark-hex: #251f1c;
+
+    /* Accent (Warm Amber) */
+    --color-accent-bg: #e8aa42;
+    --color-accent-hover-bg: #f4ba58;
+    --color-accent-border: #c88d2f;
+    --color-accent-hex: #e8aa42;
+    --color-accent-dark-hex: #c88d2f;
+
+    /* Background */
+    --color-bg-panel: #f6efe8; /* Warm Beige for Cards */
+    --color-background: #fdfbf7; /* Off-White/Cream Main Background */
+
+    /* Text */
+    --color-text: #3a312b;
+    --color-text-muted: #78716c; /* Tailwind stone-500 */
+  }
+
+  .dark {
+    /* Dark Mode Colors (Deep Espresso & Warm Highlights) */
+
+    /* Primary (Inverted to Light Cream for Dark Mode) */
+    --color-primary-bg: #fdfbf7;
+    --color-primary-hover-bg: #ffffff;
+    --color-primary-hover-border: #e5e5e5;
+    --color-primary-hex: #fdfbf7;
+    --color-primary-dark-hex: #d4d4d4;
+
+    /* Accent (Warm Amber - slightly brightened for contrast) */
+    --color-accent-bg: #f4ba58;
+    --color-accent-hover-bg: #fcd34d;
+    --color-accent-border: #e8aa42;
+    --color-accent-hex: #f4ba58;
+    --color-accent-dark-hex: #e8aa42;
+
+    /* Background */
+    --color-background: #1e1a17; /* Very Dark Warm Brown */
+    --color-bg-panel: #2c2520; /* Slightly Lighter Espresso for Cards */
+
+    /* Text */
+    --color-text: #fdfbf7;
+    --color-text-muted: #a8a29e; /* Tailwind stone-400 */
+  }
+}
