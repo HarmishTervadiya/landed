@@ -5,87 +5,53 @@ import { useRouter } from 'expo-router';
 import { supabase } from '@/lib/supabase';
 
 function parseAuthParams(url: string) {
-  const fragment = url.includes('#') ? url.split('#')[1] : '';
-  const query = url.includes('?') ? url.split('?')[1] : '';
-  const raw = fragment || query || '';
+  const raw = url.split('#')[1] ?? url.split('?')[1] ?? '';
   const params = new URLSearchParams(raw);
-
   return {
     code: params.get('code'),
     access_token: params.get('access_token'),
     refresh_token: params.get('refresh_token'),
     error: params.get('error'),
-    error_description: params.get('error_description'),
   };
+}
+
+async function resolveSession(url: string): Promise<boolean> {
+  const { code, access_token, refresh_token, error } = parseAuthParams(url);
+
+  if (error) return false;
+
+  if (code) {
+    const { error: err } = await supabase.auth.exchangeCodeForSession(code);
+    return !err;
+  }
+
+  if (access_token && refresh_token) {
+    const { error: err } = await supabase.auth.setSession({ access_token, refresh_token });
+    return !err;
+  }
+
+  const { data: { session } } = await supabase.auth.getSession();
+  return !!session;
 }
 
 export default function AuthCallbackScreen() {
   const router = useRouter();
   const [handled, setHandled] = useState(false);
-
   const url = Linking.useURL();
 
   useEffect(() => {
+    if (!url || handled) return;
+
     let cancelled = false;
 
-    async function handle(url: string | null) {
-      if (!url || handled || cancelled) return;
-
-      const { code, access_token, refresh_token, error, error_description } = parseAuthParams(url);
-
-      if (error) {
-        setHandled(true);
-        router.replace('/auth/login');
-        return;
-      }
-
-      if (code) {
-        const { error: exchangeError } = await supabase.auth.exchangeCodeForSession(code);
-        if (exchangeError || cancelled) {
-          setHandled(true);
-          router.replace('/auth/login');
-          return;
-        }
-
-        setHandled(true);
-        router.replace('/main/');
-        return;
-      }
-
-      if (access_token && refresh_token) {
-        const { error: sessionError } = await supabase.auth.setSession({
-          access_token,
-          refresh_token,
-        });
-        if (sessionError || cancelled) {
-          setHandled(true);
-          router.replace('/auth/login');
-          return;
-        }
-
-        setHandled(true);
-        router.replace('/main/');
-        return;
-      }
-
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
+    resolveSession(url).then((success) => {
+      if (cancelled) return;
       setHandled(true);
+      router.replace(success ? '/main/' : '/auth/login');
+    });
 
-      if (session && !cancelled) {
-        router.replace('/main/');
-      } else {
-        router.replace('/auth/login');
-      }
-    }
-
-    handle(url);
-
-    return () => {
-      cancelled = true;
-    };
-  }, [handled, url, router]);
+    return () => { cancelled = true; };
+  }, [url, handled, router]);
 
   return (
     <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
