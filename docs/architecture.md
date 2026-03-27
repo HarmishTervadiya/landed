@@ -8,7 +8,7 @@ The architecture is designed to support the user through four distinct phases of
 
 ### Visual Architecture Diagram
 
-![alt text](src/assets/architeture.png)
+![alt text](../src/assets/architeture.png)
 
 ### Flow Breakdown
 
