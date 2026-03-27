@@ -24,12 +24,16 @@ export default function RootLayout() {
 
     const inAuthGroup = segments[0] === 'auth';
 
+    console.log('[AuthGuard] Segments:', segments, 'Session:', !!session, 'InAuth:', inAuthGroup);
+
     if (!session && !inAuthGroup) {
+      console.log('[AuthGuard] Redirecting to login...');
       router.replace('/auth/login');
     } else if (session && inAuthGroup) {
+      console.log('[AuthGuard] Redirecting to main...');
       router.replace('/main/');
     }
-  }, [initialized, session, segments, rootNavigationState?.key]);
+  }, [initialized, session, segments, rootNavigationState?.key, router]);
   if (!initialized) {
     return (
       <View className="flex-1 items-center justify-center bg-background">

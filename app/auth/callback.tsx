@@ -30,7 +30,9 @@ async function resolveSession(url: string): Promise<boolean> {
     return !err;
   }
 
-  const { data: { session } } = await supabase.auth.getSession();
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
   return !!session;
 }
 
@@ -50,7 +52,9 @@ export default function AuthCallbackScreen() {
       router.replace(success ? '/main/' : '/auth/login');
     });
 
-    return () => { cancelled = true; };
+    return () => {
+      cancelled = true;
+    };
   }, [url, handled, router]);
 
   return (
