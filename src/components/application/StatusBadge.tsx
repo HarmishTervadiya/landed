@@ -1,8 +1,6 @@
 import React from 'react';
 import { View, Text } from 'react-native';
-import { Enums } from '@/types/supabase.types';
-
-type AppStatus = Enums<'app_status'>;
+import { AppStatus } from '@/types';
 
 const getStatusStyles = (status: AppStatus) => {
   switch (status) {

@@ -47,6 +47,13 @@ export default function _layout() {
           title: 'Application Detail',
         }}
       />
+      <Tabs.Screen
+        name="eventDetail"
+        options={{
+          href: null,
+          title: 'Event Detail',
+        }}
+      />
     </Tabs>
   );
 }

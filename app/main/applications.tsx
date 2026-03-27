@@ -3,7 +3,7 @@ import { Text, View, FlatList, TouchableOpacity, ActivityIndicator } from 'react
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useApplicationStore } from '@/store/applicationStore';
-import { ApplicationCard } from '@/components/ApplicationCard';
+import { ApplicationCard } from '@/components/application/ApplicationCard';
 
 export default function ApplicationsScreen() {
   const router = useRouter();
@@ -11,7 +11,7 @@ export default function ApplicationsScreen() {
 
   useEffect(() => {
     fetchAll();
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleCreate = () => {
     router.push({ pathname: '/main/applicationDetail', params: { mode: 'create' } });

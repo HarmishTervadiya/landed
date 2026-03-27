@@ -1,10 +1,10 @@
 import React from 'react';
 import { View, Text, Pressable, Alert } from 'react-native';
-import { Tables } from '@/types/supabase.types';
+import { Application } from '@/types';
 import { StatusBadge } from './StatusBadge';
 
 interface ApplicationCardProps {
-  application: Tables<'applications'>;
+  application: Application;
   onPress: () => void;
   onDelete: () => void;
 }
