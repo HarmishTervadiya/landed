@@ -14,10 +14,12 @@ export const fetchEventsByApplication = async (applicationId: string): Promise<E
 };
 
 export const fetchUpcomingEvents = async (): Promise<Event[]> => {
+  const now = new Date().toISOString();
   const { data, error } = await supabase
     .from('events')
     .select('*')
     .eq('status', 'Upcoming')
+    .gt('event_time', now)
     .is('deleted_at', null)
     .order('event_time', { ascending: true })
     .limit(10);

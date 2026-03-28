@@ -19,38 +19,61 @@ export const getDeviceTimezone = (): string => {
 };
 
 /**
- * Converts a local datetime string (e.g. from a date picker) to a UTC ISO string
- * suitable for storing as a Supabase timestamptz.
+ * Converts a local datetime string in a given timezone to a UTC ISO string.
+ * Uses Intl to compute the offset correctly — avoids the double-conversion bug.
  *
- * @param localIso - ISO-like string representing local time (e.g. '2025-06-09T14:30:00')
- * @param timezone - IANA timezone string (e.g. 'America/New_York')
- * @returns UTC ISO string (e.g. '2025-06-09T18:30:00.000Z')
+ * @param localIso - 'YYYY-MM-DDTHH:mm:ss' representing local time in `timezone`
+ * @param timezone - IANA timezone string
  */
-export const toUTC = (localIso: string, timezone: string): string => {
-  // Intl doesn't parse — we use the trick of formatting a known UTC date
-  // and finding the offset, then applying it.
-  const date = new Date(localIso);
-
-  const utcMs = date.getTime();
-  const localOffsetMs = getTimezoneOffsetMs(date, timezone);
-
-  return new Date(utcMs - localOffsetMs).toISOString();
+export const localToUTC = (localIso: string, timezone: string): string => {
+  // Parse the local ISO as if it were UTC to get a reference Date
+  const asIfUtc = new Date(localIso + 'Z');
+  // Find what UTC time corresponds to this local time in the given timezone
+  // by computing the offset at that approximate moment
+  const offsetMs = getTimezoneOffsetMs(asIfUtc, timezone);
+  return new Date(asIfUtc.getTime() - offsetMs).toISOString();
 };
 
 /**
- * Converts a UTC ISO string from Supabase to a local ISO string in the given timezone.
- *
- * @param utcIso - UTC ISO string from the database (e.g. '2025-06-09T18:30:00.000Z')
- * @param timezone - IANA timezone string
- * @returns Local ISO-like string (e.g. '2025-06-09T14:30:00')
+ * Converts a UTC ISO string to local time parts in the given timezone,
+ * returning a Date object set to those local components (for use in pickers).
+ */
+export const utcToLocalDate = (utcIso: string, timezone: string): Date => {
+  const utcDate = new Date(utcIso);
+  const parts = new Intl.DateTimeFormat('en-US', {
+    timeZone: timezone,
+    year: 'numeric',
+    month: '2-digit',
+    day: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
+    hour12: false,
+  }).formatToParts(utcDate);
+  const get = (type: string) => Number(parts.find((p) => p.type === type)?.value ?? '0');
+  const hour = get('hour') === 24 ? 0 : get('hour');
+  return new Date(get('year'), get('month') - 1, get('day'), hour, get('minute'), 0);
+};
+
+/**
+ * @deprecated Use localToUTC instead
+ */
+export const toUTC = localToUTC;
+
+/**
+ * @deprecated Use utcToLocalDate instead
  */
 export const toLocalIso = (utcIso: string, timezone: string): string => {
   const date = new Date(utcIso);
   const localOffsetMs = getTimezoneOffsetMs(date, timezone);
   const localDate = new Date(date.getTime() + localOffsetMs);
 
-  // Return as a local ISO string without the Z suffix
-  return localDate.toISOString().replace('Z', '');
+  // Use local date components directly to avoid any UTC re-interpretation
+  const pad = (n: number) => String(n).padStart(2, '0');
+  return (
+    `${localDate.getUTCFullYear()}-${pad(localDate.getUTCMonth() + 1)}-${pad(localDate.getUTCDate())}` +
+    `T${pad(localDate.getUTCHours())}:${pad(localDate.getUTCMinutes())}:${pad(localDate.getUTCSeconds())}`
+  );
 };
 
 /**

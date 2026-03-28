@@ -16,23 +16,19 @@ function TimelineItemRowInner({
   const isNote = item.kind === 'note';
   const isEvent = item.kind === 'event';
 
-  // Date/time formatting helpers
+  // Date/time formatting helpers — format is "Sat, Mar 28, 4:05 PM", split on last comma
   const getDateString = () => {
-    if (isEvent) return formatEventTime(item.data.event_time, timezone).split(',')[0];
-    return formatEventTime(item.data.created_at || new Date().toISOString(), timezone).split(
-      ','
-    )[0];
+    const raw = isEvent
+      ? formatEventTime(item.data.event_time, timezone)
+      : formatEventTime(item.data.created_at || new Date().toISOString(), timezone);
+    return raw.substring(0, raw.lastIndexOf(',')).trim();
   };
 
   const getTimeString = () => {
-    if (isEvent) {
-      const parts = formatEventTime(item.data.event_time, timezone).split(',');
-      return parts[1]?.trim();
-    }
-    const parts = formatEventTime(item.data.created_at || new Date().toISOString(), timezone).split(
-      ','
-    );
-    return parts[1]?.trim();
+    const raw = isEvent
+      ? formatEventTime(item.data.event_time, timezone)
+      : formatEventTime(item.data.created_at || new Date().toISOString(), timezone);
+    return raw.substring(raw.lastIndexOf(',') + 1).trim();
   };
 
   const isPastEvent = isEvent && item.data.status === 'Done';

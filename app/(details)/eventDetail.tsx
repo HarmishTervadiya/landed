@@ -5,8 +5,11 @@ import {
   TextInput,
   TouchableOpacity,
   ScrollView,
+  RefreshControl,
   ActivityIndicator,
   Alert,
+  KeyboardAvoidingView,
+  Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -17,7 +20,7 @@ import { NoteItem } from '@/components/notes/NoteItem';
 import { NoteComposer } from '@/components/notes/NoteComposer';
 import { DateTimePicker } from '@/components/shared/DateTimePicker';
 import { EventType } from '@/types';
-import { toUTC, toLocalIso } from '@/utils/timezone';
+import { getDeviceTimezone, localToUTC, utcToLocalDate } from '@/utils/timezone';
 
 const EVENT_TYPES: EventType[] = ['Interview', 'Assessment', 'Follow_Up', 'Deadline', 'Start_Date'];
 
@@ -37,11 +40,20 @@ export default function EventDetailScreen() {
 
   const { eventNotes, fetchForEvent, create: createNote } = useNoteStore();
   const { profile } = useProfileStore();
-  const timezone = profile?.timezone ?? 'UTC';
+  const timezone = profile?.timezone ?? getDeviceTimezone();
 
   const [title, setTitle] = useState('');
   const [type, setType] = useState<EventType>('Interview');
   const [eventDate, setEventDate] = useState<Date>(new Date());
+  const [titleError, setTitleError] = useState<string | undefined>();
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(async () => {
+    if (!id) return;
+    setRefreshing(true);
+    await Promise.all([fetchOne(id), fetchForEvent(id)]);
+    setRefreshing(false);
+  }, [id, fetchOne, fetchForEvent]);
 
   useEffect(() => {
     if (id) {
@@ -55,9 +67,8 @@ export default function EventDetailScreen() {
     if (!selectedEvent) return;
     setTitle(selectedEvent.title);
     setType(selectedEvent.type);
-    const localIso = toLocalIso(selectedEvent.event_time, timezone);
-    setEventDate(new Date(localIso));
-  }, [selectedEvent, timezone]);
+    setEventDate(utcToLocalDate(selectedEvent.event_time, getDeviceTimezone()));
+  }, [selectedEvent]);
 
   const handleBack = useCallback(() => {
     router.back();
@@ -65,14 +76,23 @@ export default function EventDetailScreen() {
 
   const handleSave = useCallback(async () => {
     if (!title.trim()) {
-      Alert.alert('Missing fields', 'Please enter a title.');
+      setTitleError('Event title is required.');
       return;
     }
+    if (title.trim().length < 2) {
+      setTitleError('Must be at least 2 characters.');
+      return;
+    }
+    setTitleError(undefined);
     if (!id) return;
-    const utcTime = toUTC(eventDate.toISOString().replace('Z', ''), timezone);
+    // Build local ISO from picker's local Date components, then convert to UTC
+    const tz = getDeviceTimezone();
+    const pad = (n: number) => String(n).padStart(2, '0');
+    const localIso = `${eventDate.getFullYear()}-${pad(eventDate.getMonth() + 1)}-${pad(eventDate.getDate())}T${pad(eventDate.getHours())}:${pad(eventDate.getMinutes())}:00`;
+    const utcTime = localToUTC(localIso, tz);
     const result = await update(id, { title: title.trim(), type, event_time: utcTime });
     if (result.success) handleBack();
-  }, [title, type, eventDate, timezone, id, update, handleBack]);
+  }, [title, type, eventDate, id, update, handleBack]);
 
   const handleDelete = useCallback(() => {
     if (!id) return;
@@ -110,95 +130,111 @@ export default function EventDetailScreen() {
   }
 
   return (
-    <SafeAreaView edges={['top', 'left', 'right']} className="flex-1 bg-background">
-      {/* Header */}
-      <View className="flex-row items-center justify-between px-4 py-4">
-        <TouchableOpacity onPress={handleBack}>
-          <Text className="text-lg font-medium text-primary">← Back</Text>
-        </TouchableOpacity>
-        <Text className="flex-1 text-center text-xl font-bold text-primary">Edit Event</Text>
-        <TouchableOpacity onPress={handleDelete}>
-          <Text className="font-medium text-red-500">Delete</Text>
-        </TouchableOpacity>
-      </View>
-
-      <ScrollView contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 40 }}>
-        {eventError ? (
-          <View className="mb-4 rounded-xl bg-red-100 p-4">
-            <Text className="text-red-700">{eventError}</Text>
-          </View>
-        ) : null}
-
-        {/* Form card */}
-        <View className="mb-4 rounded-3xl bg-panel p-4">
-          <Text className="mb-1 text-xs font-medium uppercase tracking-wide text-stone-400">
-            Title
-          </Text>
-          <TextInput
-            value={title}
-            onChangeText={setTitle}
-            placeholder="e.g. Technical Interview Round 1"
-            placeholderTextColor="#a8a29e"
-            className="mb-4 border-b border-stone-200 pb-2 text-base text-primary"
-          />
-
-          <Text className="mb-2 text-xs font-medium uppercase tracking-wide text-stone-400">
-            Type
-          </Text>
-          <View className="mb-4 flex-row flex-wrap gap-2">
-            {EVENT_TYPES.map((t) => (
-              <TouchableOpacity
-                key={t}
-                onPress={() => setType(t)}
-                style={{
-                  borderRadius: 999,
-                  paddingHorizontal: 12,
-                  paddingVertical: 4,
-                  backgroundColor: type === t ? '#3A312B' : 'transparent',
-                  borderWidth: 1,
-                  borderColor: type === t ? '#3A312B' : 'rgba(58,49,43,0.2)',
-                }}>
-                <Text
-                  style={{
-                    fontSize: 12,
-                    fontWeight: '500',
-                    color: type === t ? '#FDFBF7' : '#3A312B',
-                  }}>
-                  {t.replace('_', ' ')}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </View>
-
-          <DateTimePicker value={eventDate} onChange={setEventDate} />
+    <KeyboardAvoidingView
+      style={{ flex: 1 }}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}>
+      <SafeAreaView edges={['top', 'left', 'right']} className="flex-1 bg-background">
+        {/* Header */}
+        <View className="flex-row items-center justify-between px-4 py-4">
+          <TouchableOpacity onPress={handleBack}>
+            <Text className="text-lg font-medium text-primary">← Back</Text>
+          </TouchableOpacity>
+          <Text className="flex-1 text-center text-xl font-bold text-primary">Edit Event</Text>
+          <TouchableOpacity onPress={handleDelete}>
+            <Text className="font-medium text-red-500">Delete</Text>
+          </TouchableOpacity>
         </View>
 
-        <TouchableOpacity
-          onPress={handleSave}
-          disabled={eventLoading}
-          className="mb-6 items-center rounded-full bg-primary py-4">
-          {eventLoading ? (
-            <ActivityIndicator color="#fff" />
-          ) : (
-            <Text className="text-base font-bold text-background">Save Changes</Text>
-          )}
-        </TouchableOpacity>
+        <ScrollView
+          contentContainerStyle={{ paddingHorizontal: 16, paddingBottom: 40 }}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3a312b" />
+          }>
+          {eventError ? (
+            <View className="mb-4 rounded-xl bg-red-100 p-4">
+              <Text className="text-red-700">{eventError}</Text>
+            </View>
+          ) : null}
 
-        {/* Event notes */}
-        <Text className="mb-3 text-lg text-primary" style={{ fontFamily: 'serif' }}>
-          Event Notes
-        </Text>
-        <NoteComposer onSubmit={handleAddNote} onCalendarPress={() => {}} />
-        <View className="mt-3">
-          {eventNotes.length === 0 ? (
-            <Text className="py-4 text-center text-sm text-stone-400">
-              No notes for this event yet.
+          {/* Form card */}
+          <View className="mb-4 rounded-3xl bg-panel p-4">
+            <Text className="mb-1 text-xs font-medium uppercase tracking-wide text-stone-400">
+              Title
             </Text>
-          ) : (
-            eventNotes.map((note) => <NoteItem key={note.id} note={note} />)
-          )}
-        </View>
-      </ScrollView>
-    </SafeAreaView>
+            <TextInput
+              value={title}
+              onChangeText={(t) => {
+                setTitle(t);
+                if (titleError) setTitleError(undefined);
+              }}
+              placeholder="e.g. Technical Interview Round 1"
+              placeholderTextColor="#a8a29e"
+              className={`mb-1 border-b pb-2 text-base text-primary ${titleError ? 'border-red-300' : 'border-stone-200'}`}
+            />
+            {titleError ? (
+              <Text className="mb-3 text-xs text-red-500">{titleError}</Text>
+            ) : (
+              <View className="mb-4" />
+            )}
+
+            <Text className="mb-2 text-xs font-medium uppercase tracking-wide text-stone-400">
+              Type
+            </Text>
+            <View className="mb-4 flex-row flex-wrap gap-2">
+              {EVENT_TYPES.map((t) => (
+                <TouchableOpacity
+                  key={t}
+                  onPress={() => setType(t)}
+                  style={{
+                    borderRadius: 999,
+                    paddingHorizontal: 12,
+                    paddingVertical: 4,
+                    backgroundColor: type === t ? '#3A312B' : 'transparent',
+                    borderWidth: 1,
+                    borderColor: type === t ? '#3A312B' : 'rgba(58,49,43,0.2)',
+                  }}>
+                  <Text
+                    style={{
+                      fontSize: 12,
+                      fontWeight: '500',
+                      color: type === t ? '#FDFBF7' : '#3A312B',
+                    }}>
+                    {t.replace('_', ' ')}
+                  </Text>
+                </TouchableOpacity>
+              ))}
+            </View>
+
+            <DateTimePicker value={eventDate} onChange={setEventDate} />
+          </View>
+
+          <TouchableOpacity
+            onPress={handleSave}
+            disabled={eventLoading}
+            className="mb-6 items-center rounded-full bg-primary py-4">
+            {eventLoading ? (
+              <ActivityIndicator color="#fff" />
+            ) : (
+              <Text className="text-base font-bold text-background">Save Changes</Text>
+            )}
+          </TouchableOpacity>
+
+          {/* Event notes */}
+          <Text className="mb-3 text-lg text-primary" style={{ fontFamily: 'serif' }}>
+            Event Notes
+          </Text>
+          <NoteComposer onSubmit={handleAddNote} onCalendarPress={() => {}} />
+          <View className="mt-3">
+            {eventNotes.length === 0 ? (
+              <Text className="py-4 text-center text-sm text-stone-400">
+                No notes for this event yet.
+              </Text>
+            ) : (
+              eventNotes.map((note) => <NoteItem key={note.id} note={note} />)
+            )}
+          </View>
+        </ScrollView>
+      </SafeAreaView>
+    </KeyboardAvoidingView>
   );
 }

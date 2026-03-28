@@ -33,6 +33,17 @@ export const ApplicationSheet = ({ isOpen, onClose, application }: ApplicationSh
   const [showStatusPicker, setShowStatusPicker] = useState(false);
   const [jdStoragePath, setJdStoragePath] = useState<string | null>(null);
   const [jdUploading, setJdUploading] = useState(false);
+  const [errors, setErrors] = useState<{ companyName?: string; jdUrl?: string }>({});
+
+  const validate = () => {
+    const e: typeof errors = {};
+    if (!companyName.trim()) e.companyName = 'Company name is required.';
+    else if (companyName.trim().length < 2) e.companyName = 'Must be at least 2 characters.';
+    if (jdUrl.trim() && !/^https?:\/\/.+\..+/.test(jdUrl.trim()))
+      e.jdUrl = 'Enter a valid URL (e.g. https://company.com/jobs/…)';
+    setErrors(e);
+    return Object.keys(e).length === 0;
+  };
 
   useEffect(() => {
     if (isOpen && application) {
@@ -49,11 +60,12 @@ export const ApplicationSheet = ({ isOpen, onClose, application }: ApplicationSh
       setStatus('Wishlist');
       setShowStatusPicker(false);
       setJdStoragePath(null);
+      setErrors({});
     }
   }, [isOpen, application]);
 
   const handleSubmit = useCallback(async () => {
-    if (!companyName.trim()) return;
+    if (!validate()) return;
 
     const payload = {
       company_name: companyName.trim(),
@@ -142,7 +154,7 @@ export const ApplicationSheet = ({ isOpen, onClose, application }: ApplicationSh
       isOpen={isOpen}
       onClose={onClose}
       title={isEditMode ? 'Edit Application' : 'New Application'}
-      snapHeight={isEditMode ? 620 : 560}>
+      snapHeight={isEditMode ? 700 : 640}>
       <ScrollView
         showsVerticalScrollIndicator={false}
         keyboardShouldPersistTaps="handled"
@@ -156,17 +168,23 @@ export const ApplicationSheet = ({ isOpen, onClose, application }: ApplicationSh
         {/* Company Name */}
         <View className="mb-5">
           <Text className="mb-2 text-[10px] font-medium uppercase tracking-wider text-stone-500">
-            Company Name
+            Company Name <Text className="text-red-400">*</Text>
           </Text>
           <TextInput
-            className="rounded-[1rem] border border-stone-200 bg-white px-4 py-3.5 text-[#3A312B]"
+            className={`rounded-[1rem] border bg-white px-4 py-3.5 text-[#3A312B] ${errors.companyName ? 'border-red-300' : 'border-stone-200'}`}
             value={companyName}
-            onChangeText={setCompanyName}
+            onChangeText={(t) => {
+              setCompanyName(t);
+              if (errors.companyName) setErrors((e) => ({ ...e, companyName: undefined }));
+            }}
             placeholder="e.g. Stripe"
             placeholderTextColor="#A8A29E"
             autoCapitalize="words"
             returnKeyType="next"
           />
+          {errors.companyName ? (
+            <Text className="mt-1 text-xs text-red-500">{errors.companyName}</Text>
+          ) : null}
         </View>
 
         {/* Role Title */}
@@ -182,6 +200,28 @@ export const ApplicationSheet = ({ isOpen, onClose, application }: ApplicationSh
             placeholderTextColor="#A8A29E"
             returnKeyType="done"
           />
+        </View>
+
+        {/* JD URL */}
+        <View className="mb-5">
+          <Text className="mb-2 text-[10px] font-medium uppercase tracking-wider text-stone-500">
+            Job Posting URL
+          </Text>
+          <TextInput
+            className={`rounded-[1rem] border bg-white px-4 py-3.5 text-[#3A312B] ${errors.jdUrl ? 'border-red-300' : 'border-stone-200'}`}
+            value={jdUrl}
+            onChangeText={(t) => {
+              setJdUrl(t);
+              if (errors.jdUrl) setErrors((e) => ({ ...e, jdUrl: undefined }));
+            }}
+            placeholder="https://company.com/jobs/..."
+            placeholderTextColor="#A8A29E"
+            keyboardType="url"
+            autoCapitalize="none"
+            autoCorrect={false}
+            returnKeyType="done"
+          />
+          {errors.jdUrl ? <Text className="mt-1 text-xs text-red-500">{errors.jdUrl}</Text> : null}
         </View>
 
         {/* Two Column Layout: Status & JD Document */}

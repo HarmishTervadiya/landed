@@ -1,9 +1,14 @@
-import React, { useCallback, useEffect } from 'react';
-import { ActivityIndicator, Text, TouchableOpacity, View, Image } from 'react-native';
+import React, { useCallback, useEffect, useState } from 'react';
+import { ActivityIndicator, Alert, Text, TouchableOpacity, View, Image } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useAuthStore } from '@/store/authStore';
 import { useProfileStore } from '@/store/profileStore';
-import { Bell, MapPin, ChevronRight, LogOut } from 'lucide-react-native';
+import { useApplicationStore } from '@/store/applicationStore';
+import { useEventStore } from '@/store/eventStore';
+import { useNoteStore } from '@/store/noteStore';
+import { Bell, MapPin, ChevronRight, LogOut, Download } from 'lucide-react-native';
+import { exportApplicationsXlsx } from '@/utils/exportXlsx';
+import { listScheduledNotifications, requestNotificationPermissions } from '@/utils/notifications';
 
 export default function ProfileScreen() {
   const { user, signOut, loading: authLoading, error: authError } = useAuthStore();
@@ -14,17 +19,52 @@ export default function ProfileScreen() {
     loading: profileLoading,
     error: profileError,
   } = useProfileStore();
+  const applications = useApplicationStore((s) => s.applications);
+  const fetchAllApplications = useApplicationStore((s) => s.fetchAll);
+  const events = useEventStore((s) => s.events);
+  const notes = useNoteStore((s) => s.notes);
+
+  const [exporting, setExporting] = useState(false);
 
   useEffect(() => {
     load();
-  }, [load]);
+    fetchAllApplications();
+  }, [load, fetchAllApplications]);
 
   const loading = authLoading || profileLoading;
   const error = authError ?? profileError;
 
+  const handleExport = useCallback(async () => {
+    if (applications.length === 0) {
+      Alert.alert('Nothing to export', 'Add some applications first.');
+      return;
+    }
+    try {
+      setExporting(true);
+      await exportApplicationsXlsx(applications, events, notes);
+    } catch (e) {
+      Alert.alert('Export failed', e instanceof Error ? e.message : 'Unknown error');
+    } finally {
+      setExporting(false);
+    }
+  }, [applications, events]);
+
   const handleSyncTimezone = useCallback(() => {
     syncTimezone();
   }, [syncTimezone]);
+
+  const handleDebugNotifications = useCallback(async () => {
+    const granted = await requestNotificationPermissions();
+    if (!granted) {
+      Alert.alert('Permission denied', 'Notification permission is not granted.');
+      return;
+    }
+    await listScheduledNotifications();
+    Alert.alert(
+      'Notification Debug',
+      'Check your console logs for scheduled notifications.\n\nIf none are listed, events may have been saved with past times due to the timezone bug — try creating a new event.'
+    );
+  }, []);
 
   const handleSignOut = useCallback(() => {
     signOut();
@@ -56,18 +96,39 @@ export default function ProfileScreen() {
 
       <View className="flex flex-col gap-3">
         {/* Notifications */}
-        <View className="flex-row items-center gap-4 rounded-[1.5rem] border border-stone-50 bg-white p-4 shadow-sm">
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={handleDebugNotifications}
+          className="flex-row items-center gap-4 rounded-[1.5rem] border border-stone-50 bg-white p-4 shadow-sm">
           <View className="h-10 w-10 items-center justify-center rounded-full bg-stone-100">
             <Bell size={18} color="#78716C" />
           </View>
           <View className="flex-1">
             <Text className="font-medium text-[#3A312B]">Notifications</Text>
-            <Text className="text-xs text-stone-500">Interview reminders</Text>
+            <Text className="text-xs text-stone-500">Check scheduled reminders</Text>
           </View>
-          <View className="h-6 w-12 items-end rounded-full bg-[#E8AA42] p-1">
-            <View className="h-4 w-4 rounded-full bg-white shadow-sm" />
+          <ChevronRight size={18} color="#D6D3D1" />
+        </TouchableOpacity>
+
+        {/* Export */}
+        <TouchableOpacity
+          activeOpacity={0.8}
+          onPress={handleExport}
+          disabled={exporting}
+          className="flex-row items-center gap-4 rounded-[1.5rem] border border-stone-50 bg-white p-4 shadow-sm">
+          <View className="h-10 w-10 items-center justify-center rounded-full bg-stone-100">
+            <Download size={18} color="#78716C" />
           </View>
-        </View>
+          <View className="flex-1">
+            <Text className="font-medium text-[#3A312B]">Export Data</Text>
+            <Text className="text-xs text-stone-500">Download as Excel (.xlsx)</Text>
+          </View>
+          {exporting ? (
+            <ActivityIndicator size="small" color="#D6D3D1" />
+          ) : (
+            <ChevronRight size={18} color="#D6D3D1" />
+          )}
+        </TouchableOpacity>
 
         {/* Timezone */}
         <TouchableOpacity

@@ -1,5 +1,13 @@
 import React, { useEffect } from 'react';
-import { TouchableWithoutFeedback, View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import {
+  TouchableWithoutFeedback,
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
+} from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -57,28 +65,32 @@ export const BottomSheet = ({
       </TouchableWithoutFeedback>
 
       {/* Sheet */}
-      <Animated.View
-        style={[sheetStyle, { height: snapHeight }]}
-        className="absolute bottom-0 left-0 right-0 rounded-t-[2.5rem] bg-white pb-12 shadow-2xl">
-        {/* Drag handle */}
-        <View className="items-center pb-2 pt-4">
-          <View className="h-1.5 w-12 rounded-full bg-stone-200" />
-        </View>
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+        style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}>
+        <Animated.View
+          style={[sheetStyle, { height: snapHeight }]}
+          className="rounded-t-[2.5rem] bg-white pb-12 shadow-2xl">
+          {/* Drag handle */}
+          <View className="items-center pb-2 pt-4">
+            <View className="h-1.5 w-12 rounded-full bg-stone-200" />
+          </View>
 
-        {/* Title and Close Button */}
-        <View className="flex-row items-center justify-between px-6 pb-6 pt-4">
-          <Text className="font-serif text-2xl text-[#3A312B]">{title}</Text>
-          <TouchableOpacity
-            onPress={onClose}
-            activeOpacity={0.7}
-            className="h-8 w-8 items-center justify-center rounded-full border border-stone-200 bg-stone-100">
-            <X size={16} color="#78716C" />
-          </TouchableOpacity>
-        </View>
+          {/* Title and Close Button */}
+          <View className="flex-row items-center justify-between px-6 pb-6 pt-4">
+            <Text className="font-serif text-2xl text-[#3A312B]">{title}</Text>
+            <TouchableOpacity
+              onPress={onClose}
+              activeOpacity={0.7}
+              className="h-8 w-8 items-center justify-center rounded-full border border-stone-200 bg-stone-100">
+              <X size={16} color="#78716C" />
+            </TouchableOpacity>
+          </View>
 
-        {/* Content */}
-        <View className="flex-1 px-6">{children}</View>
-      </Animated.View>
+          {/* Content */}
+          <View className="flex-1 px-6">{children}</View>
+        </Animated.View>
+      </KeyboardAvoidingView>
     </View>
   );
 };

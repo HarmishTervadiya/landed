@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  RefreshControl,
   TouchableOpacity,
   Text,
   View,
@@ -27,6 +28,13 @@ export default function ApplicationsScreen() {
   const [selectedApplication, setSelectedApplication] = useState<Application | undefined>(
     undefined
   );
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(async () => {
+    setRefreshing(true);
+    await fetchAll();
+    setRefreshing(false);
+  }, [fetchAll]);
 
   useEffect(() => {
     fetchAll();
@@ -97,6 +105,9 @@ export default function ApplicationsScreen() {
           )}
           contentContainerStyle={{ paddingBottom: 120 }}
           showsVerticalScrollIndicator={false}
+          refreshControl={
+            <RefreshControl refreshing={refreshing} onRefresh={onRefresh} tintColor="#3A312B" />
+          }
           ListEmptyComponent={
             <View className="items-center py-12">
               <Text className="text-center text-lg text-stone-400">

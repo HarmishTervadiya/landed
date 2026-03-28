@@ -84,7 +84,8 @@ export async function scheduleEventReminders(
 
     const reminders = [
       { label: '1 day before', title: '⏰ Tomorrow', offsetMs: 24 * 60 * 60 * 1000 },
-      { label: '1 hour before', title: '⏰ In 1 hour', offsetMs: 60 * 60 * 1000 },
+      { label: '4 hours before', title: '⏰ In 4 hours', offsetMs: 4 * 60 * 60 * 1000 },
+      { label: '30 mins before', title: '⏰ In 30 minutes', offsetMs: 30 * 60 * 1000 },
       { label: 'at event time', title: '🗓 Starting now', offsetMs: 0 },
     ];
 
@@ -102,11 +103,11 @@ export async function scheduleEventReminders(
           body,
           sound: 'default',
           data: { eventId },
-          ...(Platform.OS === 'android' && { channelId: 'event-reminders' }),
         },
         trigger: {
           type: Notifications.SchedulableTriggerInputTypes.DATE,
           date: triggerDate,
+          ...(Platform.OS === 'android' && { channelId: 'event-reminders' }),
         },
       });
 

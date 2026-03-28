@@ -19,6 +19,7 @@ export interface ApplicationState extends BaseState {
   create: (data: ApplicationInsert) => Promise<ActionResult<void>>;
   update: (id: string, data: ApplicationUpdate) => Promise<ActionResult<void>>;
   remove: (id: string) => Promise<ActionResult<void>>;
+  clearSelected: () => void;
 }
 
 export const useApplicationStore = create<ApplicationState>((set, get) => {
@@ -75,5 +76,7 @@ export const useApplicationStore = create<ApplicationState>((set, get) => {
           selectedApplication: selectedApplication?.id === id ? null : selectedApplication,
         });
       }),
+
+    clearSelected: () => set({ selectedApplication: null }),
   };
 });
